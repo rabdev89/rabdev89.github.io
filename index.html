@@ -581,6 +581,10 @@
       color: var(--yellow)
     }
 
+    .core-card:hover .core-sub {
+      color: var(--text)
+    }
+
     .core-sub {
       font-size: 10px;
       letter-spacing: .08em;
@@ -794,6 +798,11 @@
       font-size: 12px;
       line-height: 1.8;
       color: var(--muted)
+    }
+
+    .project-card:hover .project-desc,
+    .project-card:hover .project-stack .stag {
+      color: var(--text);
     }
 
     .project-arrow {
@@ -1317,14 +1326,18 @@
     <div class="about-grid">
       <div>
         <h2 class="about-heading reveal">I BUILD<br /><span>DIGITAL</span><br />PRODUCTS.</h2>
-        <p class="about-body reveal">
-          I'm <strong>Ronald Baniqued</strong> (RONPOGI / rabdev89) — a Full-Stack Software Engineer from
-          <strong>Philippines</strong>.
-          I develop and ship production-grade systems: pixel-perfect React and Vue frontends, robust NestJS/Express
-          backends, mobile apps with Expo, and AI-powered integrations.<br /><br />
-          Currently engaged at <strong>Origin Energy</strong> via Accenture on a microsite monorepo. On the side I build
-          creative tools, mobile apps, and experiment with AI engineering.
-        </p>
+        <p class="about-body reveal"> I'm <strong>Ronald Baniqued</strong> (RONPOGI / rabdev89), a <strong>Full-Stack
+            Software Engineer</strong> based in the <strong>Philippines</strong>.
+          I design, build, and deliver scalable digital products with a focus on clean architecture, exceptional user
+          experiences,
+          and maintainable code. My expertise spans modern React and Angular frontends, high-performance Node.js
+          backends
+          with NestJS and Express,
+          cross-platform mobile apps using Expo, and AI-powered applications and integrations. <br /><br /> I'm
+          available to collaborate with startups, agencies, and enterprise teams on new products, platform
+          modernization, and end-to-end software development. Whether working independently or alongside distributed
+          teams, I enjoy transforming complex ideas into reliable, production-ready solutions that create measurable
+          business value. </p>
         <div class="about-stats reveal">
           <div class="stat-card">
             <div class="stat-num">10+</div>
@@ -1360,42 +1373,58 @@
         <div class="skill-category-title"><em>Core</em> Skills</div>
         <div class="core-grid">
           <div class="core-card">
-            <div class="core-icon"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/nodejs/nodejs-original.svg" width="24" height="24" alt="Node.js" /></div>
+            <div class="core-icon"><img
+                src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/nodejs/nodejs-original.svg" width="24"
+                height="24" alt="Node.js" /></div>
             <div class="core-name">Node.js</div>
             <div class="core-sub">Runtime · APIs · CLI tools · background workers</div>
           </div>
           <div class="core-card">
-            <div class="core-icon"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/typescript/typescript-original.svg" width="24" height="24" alt="TypeScript" /></div>
+            <div class="core-icon"><img
+                src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/typescript/typescript-original.svg"
+                width="24" height="24" alt="TypeScript" /></div>
             <div class="core-name">TypeScript / JavaScript</div>
             <div class="core-sub">Strict TS · ESNext · type-safe full-stack</div>
           </div>
           <div class="core-card">
-            <div class="core-icon"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/nestjs/nestjs-original.svg" width="24" height="24" alt="NestJS" /></div>
+            <div class="core-icon"><img
+                src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/nestjs/nestjs-original.svg" width="24"
+                height="24" alt="NestJS" /></div>
             <div class="core-name">Express.js / NestJS</div>
             <div class="core-sub">REST · GraphQL · Guards · SSE streaming</div>
           </div>
           <div class="core-card">
-            <div class="core-icon"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/react/react-original.svg" width="24" height="24" alt="React" /></div>
+            <div class="core-icon"><img
+                src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/react/react-original.svg" width="24"
+                height="24" alt="React" /></div>
             <div class="core-name">React.js / Next.js</div>
             <div class="core-sub">SPA · SSR · SSG · App Router · hooks</div>
           </div>
           <div class="core-card">
-            <div class="core-icon"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/vuejs/vuejs-original.svg" width="24" height="24" alt="Vue.js" /></div>
+            <div class="core-icon"><img
+                src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/vuejs/vuejs-original.svg" width="24"
+                height="24" alt="Vue.js" /></div>
             <div class="core-name">Vue.js / Nuxt.js</div>
             <div class="core-sub">Composition API · Pinia · Nuxt SSR</div>
           </div>
           <div class="core-card">
-            <div class="core-icon"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/postgresql/postgresql-original.svg" width="24" height="24" alt="PostgreSQL" /></div>
+            <div class="core-icon"><img
+                src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/postgresql/postgresql-original.svg"
+                width="24" height="24" alt="PostgreSQL" /></div>
             <div class="core-name">PostgreSQL / MySQL / DynamoDB</div>
             <div class="core-sub">SQL design · indexing · single-table DDB</div>
           </div>
           <div class="core-card">
-            <div class="core-icon"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/amazonwebservices/amazonwebservices-original-wordmark.svg" width="24" height="24" alt="AWS" /></div>
+            <div class="core-icon"><img
+                src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/amazonwebservices/amazonwebservices-original-wordmark.svg"
+                width="24" height="24" alt="AWS" /></div>
             <div class="core-name">AWS Serverless</div>
             <div class="core-sub">Lambda · API GW · SAM · CloudFormation</div>
           </div>
           <div class="core-card">
-            <div class="core-icon"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/react/react-original.svg" width="24" height="24" alt="React Native" /></div>
+            <div class="core-icon"><img
+                src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/react/react-original.svg" width="24"
+                height="24" alt="React Native" /></div>
             <div class="core-name">React Native / Expo</div>
             <div class="core-sub">iOS · Android · EAS Build · bare workflow</div>
           </div>
@@ -1540,16 +1569,21 @@
   <!-- ══ PROJECTS ══ -->
   <section id="projects">
     <div class="section-label reveal">Selected Work & Experience</div>
-    
+
     <div style="margin-bottom: 40px;" class="reveal">
-      <h3 style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--yellow);margin-bottom:16px;">AI Engineering Focus</h3>
+      <h3 style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--yellow);margin-bottom:16px;">AI
+        Engineering Focus</h3>
       <ul style="font-size:12px;color:var(--muted);line-height:1.8;padding-left:20px;">
-        <li>Transitioning toward AI engineering with focus on Claude/Anthropic API, RAG systems, and agentic workflows</li>
-        <li>Studying AWS Certified Developer – Associate (DVA-C02) with hands-on infrastructure work (Terraform, EventBridge, Step Functions, S3)</li>
+        <li>Transitioning toward AI engineering with focus on Claude/Anthropic API, RAG systems, and agentic workflows
+        </li>
+        <li>Studying AWS Certified Developer – Associate (DVA-C02) with hands-on infrastructure work (Terraform,
+          EventBridge, Step Functions, S3)</li>
         <li>Exploring autonomous AI development agent patterns using Claude Code</li>
         <li>Building expertise in LangGraph/agentic patterns and LLMOps (Langfuse/LangSmith)</li>
       </ul>
-      <h3 style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--yellow);margin-top:24px;margin-bottom:16px;">Current Work</h3>
+      <h3
+        style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--yellow);margin-top:24px;margin-bottom:16px;">
+        Current Work</h3>
       <ul style="font-size:12px;color:var(--muted);line-height:1.8;padding-left:20px;">
         <li>Working on microsite-level monorepo architectures at Accenture (Origin Energy project)</li>
         <li>Developing with React, TypeScript, NestJS, GraphQL stack</li>
@@ -1561,7 +1595,8 @@
         <div class="project-arrow">↗</div>
         <div class="project-tag">AI · Django · pgvector · RAG</div>
         <div class="project-title">Portfolio RAG Chatbot</div>
-        <div class="project-desc">Full agentic RAG system with multi-iteration reasoning loop, Voyage AI embeddings, and Claude tool-use.</div>
+        <div class="project-desc">Full agentic RAG system with multi-iteration reasoning loop, Voyage AI embeddings, and
+          Claude tool-use.</div>
         <div class="project-stack">
           <span class="stag">Django</span><span class="stag">Claude API</span><span class="stag">pgvector</span>
         </div>
@@ -1570,7 +1605,8 @@
         <div class="project-arrow">↗</div>
         <div class="project-tag">AI · Microservice · RAG</div>
         <div class="project-title">AI Chatbot SaaS</div>
-        <div class="project-desc">Freelance solution targeting Philippine SMBs with FastAPI RAG microservice. Multi-tenant NestJS BFF.</div>
+        <div class="project-desc">Freelance solution targeting Philippine SMBs with FastAPI RAG microservice.
+          Multi-tenant NestJS BFF.</div>
         <div class="project-stack">
           <span class="stag">FastAPI</span><span class="stag">NestJS</span><span class="stag">pgvector</span>
         </div>
@@ -1579,7 +1615,8 @@
         <div class="project-arrow">↗</div>
         <div class="project-tag">Mobile · AI · Expo</div>
         <div class="project-title">BabyTrace</div>
-        <div class="project-desc">Pediatric health record app with Claude Vision AI scan flow built on Expo SDK 52.</div>
+        <div class="project-desc">Pediatric health record app with Claude Vision AI scan flow built on Expo SDK 52.
+        </div>
         <div class="project-stack">
           <span class="stag">React Native</span><span class="stag">Expo</span><span class="stag">Claude Vision</span>
         </div>
@@ -1597,7 +1634,8 @@
         <div class="project-arrow">↗</div>
         <div class="project-tag">Mobile · Expo · Supabase</div>
         <div class="project-title">KaraSync</div>
-        <div class="project-desc">Real-time multi-device group karaoke rooms with YouTube IFrame API and Supabase presence.</div>
+        <div class="project-desc">Real-time multi-device group karaoke rooms with YouTube IFrame API and Supabase
+          presence.</div>
         <div class="project-stack">
           <span class="stag">React Native</span><span class="stag">Supabase</span><span class="stag">YouTube API</span>
         </div>
@@ -1606,7 +1644,8 @@
         <div class="project-arrow">↗</div>
         <div class="project-tag">Mobile · Expo · AsyncStorage</div>
         <div class="project-title">BillSnap</div>
-        <div class="project-desc">Philippine bill & credit card tracking app with AI spend insights via Claude API.</div>
+        <div class="project-desc">Philippine bill & credit card tracking app with AI spend insights via Claude API.
+        </div>
         <div class="project-stack">
           <span class="stag">React Native</span><span class="stag">Expo</span><span class="stag">Claude AI</span>
         </div>
@@ -1624,9 +1663,11 @@
         <div class="project-arrow">↗</div>
         <div class="project-tag">Web · NestJS · React · SSE</div>
         <div class="project-title">MerchFlow</div>
-        <div class="project-desc">Kiosk-first event merchandise platform with real-time order updates. Built for tight turnaround.</div>
+        <div class="project-desc">Kiosk-first event merchandise platform with real-time order updates. Built for tight
+          turnaround.</div>
         <div class="project-stack">
-          <span class="stag">React</span><span class="stag">NestJS</span><span class="stag">PostgreSQL</span><span class="stag">Zustand</span>
+          <span class="stag">React</span><span class="stag">NestJS</span><span class="stag">PostgreSQL</span><span
+            class="stag">Zustand</span>
         </div>
       </a>
       <a href="https://github.com/rabdev89" target="_blank" class="project-card reveal">
@@ -1642,7 +1683,8 @@
         <div class="project-arrow">↗</div>
         <div class="project-tag">CLI Tool · Node.js</div>
         <div class="project-title">Aiden CLI</div>
-        <div class="project-desc">Personal AI dev workflow framework (progress.json, CLAUDE.md) globally installable with session handoff.</div>
+        <div class="project-desc">Personal AI dev workflow framework (progress.json, CLAUDE.md) globally installable
+          with session handoff.</div>
         <div class="project-stack">
           <span class="stag">Node.js</span><span class="stag">CLI</span><span class="stag">AI Dev</span>
         </div>
@@ -1660,7 +1702,8 @@
         <div class="project-arrow">↗</div>
         <div class="project-tag">Mobile · AI · FastAPI</div>
         <div class="project-title">PokéPal</div>
-        <div class="project-desc">Tamagotchi-style AI companion app using FastAPI, Expo, and ElevenLabs voice generation.</div>
+        <div class="project-desc">Tamagotchi-style AI companion app using FastAPI, Expo, and ElevenLabs voice
+          generation.</div>
         <div class="project-stack">
           <span class="stag">FastAPI</span><span class="stag">Expo</span><span class="stag">ElevenLabs</span>
         </div>
@@ -1678,7 +1721,8 @@
         <div class="project-arrow">↗</div>
         <div class="project-tag">Web · Next.js · Prisma</div>
         <div class="project-title">ProjectFlow SaaS</div>
-        <div class="project-desc">Project management system featuring real-time collaboration with Socket.io and Redis.</div>
+        <div class="project-desc">Project management system featuring real-time collaboration with Socket.io and Redis.
+        </div>
         <div class="project-stack">
           <span class="stag">Next.js 14</span><span class="stag">PostgreSQL</span><span class="stag">Socket.io</span>
         </div>
