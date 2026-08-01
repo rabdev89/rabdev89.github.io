@@ -69,7 +69,7 @@ async def run(request: Request) -> StreamingResponse:
             state={"workspace_id": workspace_id},
         )
 
-    await _ensure_conversation(conversation_id, workspace_id, user_id)
+    await _ensure_conversation(conversation_id, workspace_id, user_id, message)
 
     user_message_id = str(uuid.uuid4())
     await _save_message(user_message_id, conversation_id, "user", message)
@@ -86,24 +86,45 @@ async def run(request: Request) -> StreamingResponse:
         full_text = ""
         current_agent = ""
 
-        async for event in runner.run_async(
-            user_id=user_id,
-            session_id=conversation_id,
-            new_message=content,
-        ):
-            if event.author and event.author != current_agent:
-                if current_agent:
-                    trace_collector.end_step(current_agent, "respond")
-                current_agent = event.author
-                trace_collector.start_step(current_agent, "respond")
+        try:
+            async for event in runner.run_async(
+                user_id=user_id,
+                session_id=conversation_id,
+                new_message=content,
+            ):
+                if event.author and event.author != current_agent:
+                    if current_agent:
+                        trace_collector.end_step(current_agent, "respond")
+                    current_agent = event.author
+                    trace_collector.start_step(current_agent, "respond")
+                    yield _sse_event("agent_step", {"agent": current_agent})
 
-                yield _sse_event("agent_step", {"agent": current_agent})
+                if not event.content or not event.content.parts:
+                    continue
 
-            if event.content and event.content.parts:
                 for part in event.content.parts:
                     if part.text:
                         full_text += part.text
                         yield _sse_event("text", {"text": part.text})
+
+                    if hasattr(part, "function_call") and part.function_call:
+                        fc = part.function_call
+                        yield _sse_event("tool_call", {
+                            "agent": current_agent,
+                            "tool": fc.name,
+                        })
+                        trace_collector.start_step(
+                            current_agent, f"tool:{fc.name}"
+                        )
+
+                    if hasattr(part, "function_response") and part.function_response:
+                        fr = part.function_response
+                        trace_collector.end_step(
+                            current_agent, f"tool:{fr.name}"
+                        )
+
+        except Exception as exc:
+            yield _sse_event("error", {"error": str(exc)})
 
         if current_agent:
             trace_collector.end_step(current_agent, "respond")
@@ -153,20 +174,36 @@ async def get_messages(request: Request) -> list[dict]:
 
 
 async def _ensure_conversation(
-    conversation_id: str, workspace_id: str, user_id: str
+    conversation_id: str, workspace_id: str, user_id: str, message: str
 ) -> None:
     existing = await fetch_all(
-        "SELECT id FROM conversations WHERE id = $1", conversation_id
+        "SELECT id, title FROM conversations WHERE id = $1", conversation_id
     )
     if not existing:
+        title = _generate_title(message)
         await execute(
             """INSERT INTO conversations (id, workspace_id, user_id, title)
                VALUES ($1, $2, $3, $4)""",
             conversation_id,
             workspace_id,
             user_id,
-            "New conversation",
+            title,
         )
+    elif existing[0]["title"] == "New conversation":
+        title = _generate_title(message)
+        await execute(
+            "UPDATE conversations SET title = $1 WHERE id = $2",
+            title,
+            conversation_id,
+        )
+
+
+def _generate_title(message: str) -> str:
+    text = message.strip()
+    if len(text) <= 50:
+        return text
+    cut = text[:50].rsplit(" ", 1)
+    return (cut[0] if len(cut) > 1 else text[:50]) + "..."
 
 
 async def _save_message(

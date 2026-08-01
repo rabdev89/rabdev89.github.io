@@ -14,6 +14,7 @@ export function ChatInterface({
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [activeAgent, setActiveAgent] = useState<string | null>(null);
+  const [activeTool, setActiveTool] = useState<string | null>(null);
   const [loadingHistory, setLoadingHistory] = useState(true);
   const abortRef = useRef<AbortController | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -47,7 +48,7 @@ export function ChatInterface({
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages, activeAgent]);
+  }, [messages, activeAgent, activeTool]);
 
   const handleSubmit = useCallback(
     async (e: FormEvent) => {
@@ -60,6 +61,7 @@ export function ChatInterface({
       setInput("");
       setIsStreaming(true);
       setActiveAgent(null);
+      setActiveTool(null);
 
       const controller = new AbortController();
       abortRef.current = controller;
@@ -79,6 +81,7 @@ export function ChatInterface({
         let assistantContent = "";
         let citations: Citation[] = [];
         let buffer = "";
+        let currentEventType = "";
 
         setMessages((prev) => [
           ...prev,
@@ -95,7 +98,7 @@ export function ChatInterface({
 
           for (const line of lines) {
             if (line.startsWith("event: ")) {
-              const eventType = line.slice(7).trim();
+              currentEventType = line.slice(7).trim();
               continue;
             }
 
@@ -104,33 +107,85 @@ export function ChatInterface({
               try {
                 const data = JSON.parse(jsonStr);
 
-                if (data.agent) {
-                  setActiveAgent(data.agent);
-                } else if (data.text) {
-                  assistantContent += data.text;
-                  setMessages((prev) => {
-                    const updated = [...prev];
-                    updated[updated.length - 1] = {
-                      role: "assistant",
-                      content: assistantContent,
-                      citations: citations.length > 0 ? citations : undefined,
-                    };
-                    return updated;
-                  });
-                } else if (data.citations) {
-                  citations = data.citations;
-                  setMessages((prev) => {
-                    const updated = [...prev];
-                    updated[updated.length - 1] = {
-                      role: "assistant",
-                      content: assistantContent,
-                      citations,
-                    };
-                    return updated;
-                  });
-                } else if (data.message_id) {
-                  setActiveAgent(null);
+                switch (currentEventType) {
+                  case "agent_step":
+                    setActiveAgent(data.agent);
+                    setActiveTool(null);
+                    break;
+
+                  case "tool_call":
+                    setActiveTool(data.tool);
+                    break;
+
+                  case "text":
+                    assistantContent += data.text;
+                    setMessages((prev) => {
+                      const updated = [...prev];
+                      updated[updated.length - 1] = {
+                        role: "assistant",
+                        content: assistantContent,
+                        citations: citations.length > 0 ? citations : undefined,
+                      };
+                      return updated;
+                    });
+                    setActiveTool(null);
+                    break;
+
+                  case "citations":
+                    citations = data.citations;
+                    setMessages((prev) => {
+                      const updated = [...prev];
+                      updated[updated.length - 1] = {
+                        role: "assistant",
+                        content: assistantContent,
+                        citations,
+                      };
+                      return updated;
+                    });
+                    break;
+
+                  case "error":
+                    setMessages((prev) => {
+                      const updated = [...prev];
+                      updated[updated.length - 1] = {
+                        role: "assistant",
+                        content:
+                          assistantContent ||
+                          "An error occurred while processing your request.",
+                      };
+                      return updated;
+                    });
+                    break;
+
+                  case "done":
+                    setActiveAgent(null);
+                    setActiveTool(null);
+                    break;
+
+                  default:
+                    if (data.agent) {
+                      setActiveAgent(data.agent);
+                    } else if (data.text) {
+                      assistantContent += data.text;
+                      setMessages((prev) => {
+                        const updated = [...prev];
+                        updated[updated.length - 1] = {
+                          role: "assistant",
+                          content: assistantContent,
+                          citations:
+                            citations.length > 0 ? citations : undefined,
+                        };
+                        return updated;
+                      });
+                    } else if (data.citations) {
+                      citations = data.citations;
+                    } else if (data.message_id) {
+                      setActiveAgent(null);
+                      setActiveTool(null);
+                    }
                 }
+
+                currentEventType = "";
               } catch {
                 assistantContent += jsonStr;
                 setMessages((prev) => {
@@ -158,6 +213,7 @@ export function ChatInterface({
       } finally {
         setIsStreaming(false);
         setActiveAgent(null);
+        setActiveTool(null);
         abortRef.current = null;
       }
     },
@@ -184,7 +240,9 @@ export function ChatInterface({
           {messages.map((msg, i) => (
             <ChatMessage key={i} message={msg} />
           ))}
-          {activeAgent && <AgentStepIndicator agent={activeAgent} />}
+          {activeAgent && (
+            <AgentStepIndicator agent={activeAgent} tool={activeTool} />
+          )}
         </div>
       </div>
 

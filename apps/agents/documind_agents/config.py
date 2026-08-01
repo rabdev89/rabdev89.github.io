@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     embedding_dimensions: int = 768
     llm_model: str = "gemini-2.0-flash"
     max_critic_revisions: int = 2
+    max_code_review_rounds: int = 2
     google_api_key: str = ""
 
     model_config = {"env_prefix": "", "env_file": ".env"}
