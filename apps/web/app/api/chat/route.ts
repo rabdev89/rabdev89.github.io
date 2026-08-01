@@ -1,5 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextRequest } from "next/server";
+import { prisma } from "@documind/db";
 
 const AGENT_URL = process.env.AGENT_SERVICE_URL ?? "http://localhost:8001";
 
@@ -19,11 +20,21 @@ export async function POST(request: NextRequest) {
     return new Response("Missing conversationId or message", { status: 400 });
   }
 
+  let workspace = await prisma.workspace.findUnique({
+    where: { clerkOrgId: orgId },
+  });
+
+  if (!workspace) {
+    workspace = await prisma.workspace.create({
+      data: { clerkOrgId: orgId, name: orgId },
+    });
+  }
+
   const agentRes = await fetch(`${AGENT_URL}/run`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      workspace_id: orgId,
+      workspace_id: workspace.id,
       user_id: userId,
       conversation_id: conversationId,
       message,
