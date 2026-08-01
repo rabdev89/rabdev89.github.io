@@ -1,0 +1,158 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Workspace {
+  id         String   @id @default(uuid())
+  clerkOrgId String   @unique @map("clerk_org_id")
+  name       String
+  plan       String   @default("free")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  members       WorkspaceMember[]
+  documents     Document[]
+  chunks        Chunk[]
+  conversations Conversation[]
+
+  @@map("workspaces")
+}
+
+model User {
+  id          String   @id @default(uuid())
+  clerkUserId String   @unique @map("clerk_user_id")
+  email       String
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  memberships   WorkspaceMember[]
+  conversations Conversation[]
+
+  @@map("users")
+}
+
+model WorkspaceMember {
+  id          String   @id @default(uuid())
+  workspaceId String   @map("workspace_id")
+  userId      String   @map("user_id")
+  role        String   @default("member")
+  joinedAt    DateTime @default(now()) @map("joined_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@map("workspace_members")
+}
+
+enum DocumentStatus {
+  UPLOADING
+  PROCESSING
+  READY
+  FAILED
+}
+
+model Document {
+  id              String         @id @default(uuid())
+  workspaceId     String         @map("workspace_id")
+  filename        String
+  s3Key           String         @map("s3_key")
+  mimeType        String         @map("mime_type")
+  sizeBytes       Int            @map("size_bytes")
+  status          DocumentStatus @default(UPLOADING)
+  error           String?
+  docAiOutputUri  String?        @map("doc_ai_output_uri")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  workspace     Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  chunks        Chunk[]
+  ingestionJobs IngestionJob[]
+
+  @@index([workspaceId, status])
+  @@map("documents")
+}
+
+model Chunk {
+  id          String @id @default(uuid())
+  documentId  String @map("document_id")
+  workspaceId String @map("workspace_id")
+  ordinal     Int
+  page        Int
+  section     String @default("")
+  text        String
+  vectorId    String @map("vector_id")
+
+  document  Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([documentId])
+  @@map("chunks")
+}
+
+model Conversation {
+  id          String   @id @default(uuid())
+  workspaceId String   @map("workspace_id")
+  userId      String   @map("user_id")
+  title       String   @default("New conversation")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  Message[]
+
+  @@index([workspaceId])
+  @@map("conversations")
+}
+
+model Message {
+  id             String   @id @default(uuid())
+  conversationId String   @map("conversation_id")
+  role           String
+  content        String
+  citations      Json?
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  agentTraces  AgentTrace[]
+
+  @@index([conversationId])
+  @@map("messages")
+}
+
+model AgentTrace {
+  id        String   @id @default(uuid())
+  messageId String   @map("message_id")
+  agentName String   @map("agent_name")
+  step      String
+  input     Json
+  output    Json
+  latencyMs Int      @map("latency_ms")
+  tokens    Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+  @@map("agent_traces")
+}
+
+model IngestionJob {
+  id               String   @id @default(uuid())
+  documentId       String   @map("document_id")
+  sfnExecutionArn  String?  @map("sfn_execution_arn")
+  state            String   @default("PENDING")
+  error            String?
+  startedAt        DateTime @default(now()) @map("started_at")
+  endedAt          DateTime? @map("ended_at")
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+  @@map("ingestion_jobs")
+}
