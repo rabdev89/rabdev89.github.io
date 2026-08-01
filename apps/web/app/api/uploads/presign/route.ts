@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { prisma } from "@documind/db";
 
 const s3 = new S3Client({ region: process.env.AWS_REGION ?? "us-east-1" });
 const BUCKET = process.env.S3_UPLOAD_BUCKET ?? "documind-uploads";
@@ -43,7 +44,27 @@ export async function POST(request: NextRequest) {
 
   const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 600 });
 
-  // TODO: insert documents row with status='uploading' via Prisma
+  let workspace = await prisma.workspace.findUnique({
+    where: { clerkOrgId: orgId },
+  });
+
+  if (!workspace) {
+    workspace = await prisma.workspace.create({
+      data: { clerkOrgId: orgId, name: orgId },
+    });
+  }
+
+  await prisma.document.create({
+    data: {
+      id: documentId,
+      workspaceId: workspace.id,
+      filename,
+      s3Key,
+      mimeType: contentType,
+      sizeBytes: size,
+      status: "UPLOADING",
+    },
+  });
 
   return NextResponse.json({ uploadUrl, documentId, s3Key });
 }

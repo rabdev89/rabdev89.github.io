@@ -1,14 +1,21 @@
-interface Input {
-  workspaceId: string;
-  documentId: string;
-  vectorsUpserted: number;
-}
+import { query } from "../_shared/db";
+import type { UpsertResult } from "../_shared/types";
 
-export async function handler(event: Input) {
-  console.log("Marking document as READY", event);
+export async function handler(event: UpsertResult) {
+  const { workspaceId, documentId, vectorsUpserted } = event;
 
-  // TODO: update documents.status = 'READY'
-  // TODO: update ingestion_jobs.state = 'SUCCEEDED', set ended_at
+  console.log("Marking document as READY", { documentId, vectorsUpserted });
 
-  return { ...event, status: "READY" };
+  await query(
+    `UPDATE documents SET status = 'READY', updated_at = NOW() WHERE id = $1 AND workspace_id = $2`,
+    [documentId, workspaceId]
+  );
+
+  await query(
+    `UPDATE ingestion_jobs SET state = 'SUCCEEDED', ended_at = NOW()
+     WHERE document_id = $1 AND state = 'PROCESSING'`,
+    [documentId]
+  );
+
+  return { workspaceId, documentId, status: "READY", vectorsUpserted };
 }

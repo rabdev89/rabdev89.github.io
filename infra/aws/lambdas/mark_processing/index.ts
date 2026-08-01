@@ -1,16 +1,34 @@
-interface S3Event {
-  bucket: { name: string };
-  object: { key: string; size: number };
-}
+import { query } from "../_shared/db";
+import type { S3EventDetail, PipelineState } from "../_shared/types";
 
-export async function handler(event: S3Event) {
+export async function handler(event: S3EventDetail): Promise<PipelineState> {
   const { key } = event.object;
-  const [workspaceId, documentId] = key.split("/");
+  const parts = key.split("/");
+  if (parts.length < 3) {
+    throw new Error(`Unexpected S3 key format: ${key}. Expected {workspaceId}/{documentId}/{filename}`);
+  }
 
-  console.log("Marking document as PROCESSING", { workspaceId, documentId });
+  const [workspaceId, documentId] = parts;
 
-  // TODO: update documents.status = 'PROCESSING' via Prisma/RDS Proxy
-  // TODO: insert ingestion_jobs row
+  console.log("Marking document as PROCESSING", { workspaceId, documentId, key });
 
-  return { workspaceId, documentId, s3Key: key, bucketName: event.bucket.name };
+  await query(
+    `UPDATE documents SET status = 'PROCESSING', updated_at = NOW() WHERE id = $1 AND workspace_id = $2`,
+    [documentId, workspaceId]
+  );
+
+  await query(
+    `INSERT INTO ingestion_jobs (id, document_id, state, started_at)
+     VALUES (gen_random_uuid(), $1, 'PROCESSING', NOW())
+     ON CONFLICT (document_id) WHERE state IN ('PENDING', 'FAILED')
+     DO UPDATE SET state = 'PROCESSING', started_at = NOW(), error = NULL, ended_at = NULL`,
+    [documentId]
+  );
+
+  return {
+    workspaceId,
+    documentId,
+    s3Key: key,
+    bucketName: event.bucket.name,
+  };
 }

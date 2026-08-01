@@ -1,6 +1,8 @@
 "use client";
 
-import { useRef, useCallback, useState } from "react";
+import { useRef, useCallback, useState, useEffect } from "react";
+
+type UploadState = "idle" | "uploading" | "processing" | "ready" | "failed";
 
 export function FileUploadButton({
   conversationId,
@@ -8,42 +10,98 @@ export function FileUploadButton({
   conversationId: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
+  const [state, setState] = useState<UploadState>("idle");
+  const [activeDocId, setActiveDocId] = useState<string | null>(null);
+  const [filename, setFilename] = useState<string>("");
+
+  useEffect(() => {
+    if (!activeDocId || state !== "processing") return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/documents/${activeDocId}`);
+        if (!res.ok) return;
+        const doc = await res.json();
+        if (doc.status === "READY") {
+          setState("ready");
+          setActiveDocId(null);
+        } else if (doc.status === "FAILED") {
+          setState("failed");
+          setActiveDocId(null);
+        }
+      } catch {
+        // keep polling
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [activeDocId, state]);
 
   const handleUpload = useCallback(
     async (file: File) => {
-      setUploading(true);
+      setState("uploading");
+      setFilename(file.name);
+
       try {
         const presignRes = await fetch("/api/uploads/presign", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             filename: file.name,
-            contentType: file.type,
+            contentType: file.type || "application/pdf",
             size: file.size,
           }),
         });
 
-        if (!presignRes.ok) throw new Error("Failed to get upload URL");
+        if (!presignRes.ok) {
+          const err = await presignRes.json();
+          throw new Error(err.error || "Failed to get upload URL");
+        }
+
         const { uploadUrl, documentId } = await presignRes.json();
 
         await fetch(uploadUrl, {
           method: "PUT",
-          headers: { "Content-Type": file.type },
+          headers: { "Content-Type": file.type || "application/pdf" },
           body: file,
         });
 
-        // TODO: notify chat that document was uploaded
-        console.log("Uploaded document", documentId, "for", conversationId);
+        setState("processing");
+        setActiveDocId(documentId);
       } catch (err) {
         console.error("Upload failed:", err);
+        setState("failed");
       } finally {
-        setUploading(false);
         if (inputRef.current) inputRef.current.value = "";
       }
     },
     [conversationId]
   );
+
+  const label = {
+    idle: "+",
+    uploading: "...",
+    processing: "...",
+    ready: "+",
+    failed: "!",
+  }[state];
+
+  const title = {
+    idle: "Upload document",
+    uploading: `Uploading ${filename}...`,
+    processing: `Processing ${filename}...`,
+    ready: `${filename} ready`,
+    failed: `Failed to process ${filename}`,
+  }[state];
+
+  const stateColor =
+    state === "failed"
+      ? "border-red-500 text-red-500"
+      : state === "processing"
+        ? "border-yellow-500 text-yellow-500"
+        : state === "ready"
+          ? "border-green-500 text-green-500"
+          : "border-[var(--border)] text-[var(--muted)]";
 
   return (
     <>
@@ -59,12 +117,15 @@ export function FileUploadButton({
       />
       <button
         type="button"
-        onClick={() => inputRef.current?.click()}
-        disabled={uploading}
-        className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-4 py-3 text-sm text-[var(--muted)] transition-colors hover:bg-[var(--accent)] disabled:opacity-50"
-        title="Upload document"
+        onClick={() => {
+          if (state === "ready" || state === "failed") setState("idle");
+          inputRef.current?.click();
+        }}
+        disabled={state === "uploading" || state === "processing"}
+        className={`rounded-lg border bg-[var(--card)] px-4 py-3 text-sm transition-colors hover:bg-[var(--accent)] disabled:opacity-50 ${stateColor}`}
+        title={title}
       >
-        {uploading ? "..." : "+"}
+        {label}
       </button>
     </>
   );

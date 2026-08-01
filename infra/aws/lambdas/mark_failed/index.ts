@@ -1,22 +1,27 @@
-interface Input {
-  workspaceId?: string;
-  documentId?: string;
-  error?: {
-    Error: string;
-    Cause: string;
-  };
-}
+import { query } from "../_shared/db";
+import type { FailureInput } from "../_shared/types";
 
-export async function handler(event: Input) {
-  console.error("Marking document as FAILED", event);
+export async function handler(event: FailureInput) {
+  const { workspaceId, documentId } = event;
+  const errorMessage = event.error
+    ? `${event.error.Error}: ${event.error.Cause}`
+    : "Unknown error";
 
-  // TODO: update documents.status = 'FAILED', documents.error = error message
-  // TODO: update ingestion_jobs.state = 'FAILED', set ended_at and error
+  console.error("Marking document as FAILED", { documentId, error: errorMessage });
 
-  return {
-    workspaceId: event.workspaceId,
-    documentId: event.documentId,
-    status: "FAILED",
-    error: event.error,
-  };
+  if (documentId) {
+    await query(
+      `UPDATE documents SET status = 'FAILED', error = $1, updated_at = NOW()
+       WHERE id = $2 AND workspace_id = $3`,
+      [errorMessage, documentId, workspaceId]
+    );
+
+    await query(
+      `UPDATE ingestion_jobs SET state = 'FAILED', error = $1, ended_at = NOW()
+       WHERE document_id = $2 AND state = 'PROCESSING'`,
+      [errorMessage, documentId]
+    );
+  }
+
+  return { workspaceId, documentId, status: "FAILED", error: errorMessage };
 }
