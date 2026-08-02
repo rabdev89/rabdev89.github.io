@@ -237,45 +237,89 @@ uvicorn documind_agents.main:app --reload --port 8001
 
 ### Next.js (`apps/web/.env.local`)
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Yes | Clerk publishable key (from Clerk dashboard) |
-| `CLERK_SECRET_KEY` | Yes | Clerk secret key |
-| `NEXT_PUBLIC_CLERK_SIGN_IN_URL` | Yes | e.g. `/sign-in` |
-| `NEXT_PUBLIC_CLERK_SIGN_UP_URL` | Yes | e.g. `/sign-up` |
-| `DATABASE_URL` | Yes | PostgreSQL connection string |
-| `AGENT_SERVICE_URL` | Yes | ADK service URL (e.g. `http://localhost:8001` or Cloud Run URL) |
-| `S3_UPLOAD_BUCKET` | Yes | AWS S3 bucket name for document uploads |
-| `AWS_REGION` | No | Defaults to `us-east-1` |
+| Variable | Required | Default | How to Get the Value |
+|----------|----------|---------|---------------------|
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Yes | -- | Go to [Clerk Dashboard](https://dashboard.clerk.com) → select your application → **API Keys** → copy the **Publishable key** (starts with `pk_`). |
+| `CLERK_SECRET_KEY` | Yes | -- | Same page as above → copy the **Secret key** (starts with `sk_`). Keep this secret -- never expose in frontend code. |
+| `NEXT_PUBLIC_CLERK_SIGN_IN_URL` | Yes | -- | Set to `/sign-in`. This is a route path, not something you obtain externally. |
+| `NEXT_PUBLIC_CLERK_SIGN_UP_URL` | Yes | -- | Set to `/sign-up`. Same as above -- just a route path. |
+| `DATABASE_URL` | Yes | -- | **Local dev**: `postgresql://USER:PASSWORD@localhost:5432/documind`. **Production**: After running `terraform apply` in `infra/gcp/`, use the `cloud_sql_connection_name` output to build: `postgresql://documind:YOUR_DB_PASSWORD@/documind?host=/cloudsql/PROJECT:REGION:documind-db`. |
+| `AGENT_SERVICE_URL` | Yes | `http://localhost:8001` | **Local dev**: `http://localhost:8001` (the FastAPI server). **Production**: After deploying to Cloud Run, run `terraform output cloud_run_url` in `infra/gcp/` -- it returns the HTTPS URL (e.g., `https://documind-agents-XXXXX-uc.a.run.app`). |
+| `S3_UPLOAD_BUCKET` | Yes | -- | After running `npx cdk deploy` in `infra/aws/`, the stack outputs `UploadBucketName` (format: `documind-uploads-ACCOUNT_ID`). Alternatively, check AWS Console → S3 → find the bucket starting with `documind-uploads-`. |
+| `AWS_REGION` | No | `us-east-1` | The AWS region where you deployed the CDK stack. Only change if you deployed to a different region. |
+| `AWS_ACCESS_KEY_ID` | Yes (server) | -- | **Local dev**: Create an IAM user in AWS Console → **IAM** → **Users** → **Create user** → attach `AmazonS3FullAccess` policy → **Security credentials** → **Create access key** → copy the Access Key ID. **Production**: Use IAM roles instead (e.g., Vercel's AWS integration or instance profiles). |
+| `AWS_SECRET_ACCESS_KEY` | Yes (server) | -- | Created alongside the Access Key ID above. Copy the Secret Access Key (shown only once). |
 
 ### Agent Service (`apps/agents/.env`)
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `GOOGLE_API_KEY` | Yes | Google AI API key for ADK / Gemini |
-| `GCP_PROJECT_ID` | Yes | GCP project ID |
-| `GCP_REGION` | No | Defaults to `us-central1` |
-| `DATABASE_URL` | Yes | PostgreSQL connection string |
-| `VERTEX_VECTOR_SEARCH_INDEX_ENDPOINT` | Yes | Vertex Vector Search endpoint resource name |
-| `VERTEX_VECTOR_SEARCH_DEPLOYED_INDEX_ID` | Yes | Deployed index ID |
-| `EMBEDDING_MODEL` | No | Defaults to `text-embedding-005` |
-| `EMBEDDING_DIMENSIONS` | No | Defaults to `768` |
-| `LLM_MODEL` | No | Defaults to `gemini-2.0-flash` |
-| `MAX_CRITIC_REVISIONS` | No | Defaults to `2` |
-| `MAX_CODE_REVIEW_ROUNDS` | No | Defaults to `2` |
+| Variable | Required | Default | How to Get the Value |
+|----------|----------|---------|---------------------|
+| `GOOGLE_API_KEY` | Yes | -- | Go to [Google AI Studio](https://aistudio.google.com/apikey) → click **Create API Key** → select your GCP project → copy the key. This key is used by Google ADK to call Gemini models. |
+| `GCP_PROJECT_ID` | Yes | -- | Go to [GCP Console](https://console.cloud.google.com) → click the project dropdown at the top → your project ID is shown (e.g., `my-documind-project`). Or run: `gcloud config get-value project`. |
+| `GCP_REGION` | No | `us-central1` | The GCP region where you deployed infrastructure. Must match the region in `infra/gcp/variables.tf`. Common choices: `us-central1`, `us-east1`, `europe-west1`. |
+| `DATABASE_URL` | Yes | `postgresql://localhost:5432/documind` | Same as the Next.js `DATABASE_URL` above. Both services connect to the same Postgres database. |
+| `VERTEX_VECTOR_SEARCH_INDEX_ENDPOINT` | Yes | -- | After running `terraform apply` in `infra/gcp/`, run `terraform output vector_search_endpoint_id`. Returns a resource name like `projects/PROJECT_NUM/locations/REGION/indexEndpoints/ENDPOINT_ID`. |
+| `VERTEX_VECTOR_SEARCH_DEPLOYED_INDEX_ID` | Yes | -- | After deploying the index to the endpoint (via GCP Console or `gcloud`), the deployed index gets an ID. Find it: GCP Console → **Vertex AI** → **Vector Search** → select the endpoint → copy the **Deployed Index ID**. Or run: `gcloud ai index-endpoints list --region=REGION --format="value(deployedIndexes.id)"`. |
+| `EMBEDDING_MODEL` | No | `text-embedding-005` | The Vertex AI text embedding model. `text-embedding-005` is recommended. See [Vertex AI embedding models](https://cloud.google.com/vertex-ai/docs/generative-ai/embeddings/get-text-embeddings) for alternatives. **Warning**: Changing this after creating the Vector Search index requires re-creating the index and re-embedding all documents. |
+| `EMBEDDING_DIMENSIONS` | No | `768` | Must match the Vector Search index dimensions. `768` is the output size of `text-embedding-005`. **Immutable** after index creation -- do not change without recreating the index. |
+| `LLM_MODEL` | No | `gemini-2.0-flash` | The Gemini model used by all agents. Options: `gemini-2.0-flash` (fast, cheap), `gemini-2.5-pro` (more capable, slower). See [Gemini models](https://ai.google.dev/gemini-api/docs/models). |
+| `MAX_CRITIC_REVISIONS` | No | `2` | How many times the Critic can send the Writer back for revisions. Higher = more accurate citations but slower responses. |
+| `MAX_CODE_REVIEW_ROUNDS` | No | `2` | How many times the Reviewer can send the Coder back for revisions. Same tradeoff as above. |
 
-### AWS Lambdas (set via CDK parameters)
+### AWS Lambdas (set via CDK parameters at deploy time)
 
-| Parameter | Description |
-|-----------|-------------|
-| `GcpProjectId` | GCP project ID |
-| `GcpProjectNumber` | GCP project number (numeric) |
-| `GcpRegion` | GCP region |
-| `GcpServiceAccountEmail` | WIF service account email |
-| `DocumentAiProcessorId` | Document AI processor ID |
-| `VectorSearchIndexEndpoint` | Vertex Vector Search endpoint |
-| `VectorSearchIndexId` | Deployed index ID |
-| `DatabaseUrl` | PostgreSQL connection string (via Cloud SQL Auth Proxy) |
+These values are passed as `--parameters` when running `npx cdk deploy`. They are stored as CloudFormation parameters and injected as Lambda environment variables.
+
+| Parameter | How to Get the Value |
+|-----------|---------------------|
+| `GcpProjectId` | Same as `GCP_PROJECT_ID` above. Run: `gcloud config get-value project`. |
+| `GcpProjectNumber` | The **numeric** project number (different from the string project ID). Find it: GCP Console → **Dashboard** → **Project info** card → **Project number**. Or run: `gcloud projects describe PROJECT_ID --format="value(projectNumber)"`. |
+| `GcpRegion` | Same as `GCP_REGION` above. Must match where Terraform deployed (default: `us-central1`). |
+| `GcpServiceAccountEmail` | The WIF service account email created by Terraform. Run: `terraform output` in `infra/gcp/` -- there is no dedicated output, but the SA is `documind-aws-ingestion@PROJECT_ID.iam.gserviceaccount.com`. |
+| `DocumentAiProcessorId` | Run `terraform output document_ai_processor_id` in `infra/gcp/`. Returns a resource name like `projects/PROJECT_NUM/locations/REGION/processors/PROCESSOR_ID`. |
+| `VectorSearchIndexEndpoint` | Run `terraform output vector_search_endpoint_id` in `infra/gcp/`. Same value as the agent service's `VERTEX_VECTOR_SEARCH_INDEX_ENDPOINT`. |
+| `VectorSearchIndexId` | The deployed index ID. Same value as the agent service's `VERTEX_VECTOR_SEARCH_DEPLOYED_INDEX_ID` (see instructions above). |
+| `DatabaseUrl` | Same connection string as `DATABASE_URL`. For Lambdas connecting from AWS to Cloud SQL, you need the Cloud SQL instance's **public IP** (or a private link). Format: `postgresql://documind:PASSWORD@CLOUD_SQL_PUBLIC_IP:5432/documind`. Find the IP: GCP Console → **SQL** → click instance → **Connect to this instance** → **Public IP address**. For production, use Cloud SQL Auth Proxy over a VPN or private link. |
+
+### Quick Reference: Where Each Value Comes From
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│ Clerk Dashboard (dashboard.clerk.com)                               │
+│   → NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY                               │
+│   → CLERK_SECRET_KEY                                                │
+├─────────────────────────────────────────────────────────────────────┤
+│ Google AI Studio (aistudio.google.com/apikey)                       │
+│   → GOOGLE_API_KEY                                                  │
+├─────────────────────────────────────────────────────────────────────┤
+│ GCP Console (console.cloud.google.com)                              │
+│   → GCP_PROJECT_ID, GCP_PROJECT_NUMBER, GCP_REGION                  │
+├─────────────────────────────────────────────────────────────────────┤
+│ terraform output (after infra/gcp deploy)                           │
+│   → cloud_run_url           → AGENT_SERVICE_URL                     │
+│   → cloud_sql_connection_name → DATABASE_URL                        │
+│   → vector_search_endpoint_id → VERTEX_VECTOR_SEARCH_INDEX_ENDPOINT │
+│   → document_ai_processor_id  → DocumentAiProcessorId               │
+│   → wif_pool_provider         → (used internally by WIF)            │
+├─────────────────────────────────────────────────────────────────────┤
+│ GCP Console → Vertex AI → Vector Search                             │
+│   → Deployed Index ID → VERTEX_VECTOR_SEARCH_DEPLOYED_INDEX_ID      │
+├─────────────────────────────────────────────────────────────────────┤
+│ npx cdk deploy output (after infra/aws deploy)                      │
+│   → UploadBucketName → S3_UPLOAD_BUCKET                             │
+│   → StateMachineArn  → (for monitoring in AWS Console)              │
+├─────────────────────────────────────────────────────────────────────┤
+│ AWS Console → IAM → Users → Security credentials                    │
+│   → AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY                        │
+├─────────────────────────────────────────────────────────────────────┤
+│ You choose these yourself                                           │
+│   → NEXT_PUBLIC_CLERK_SIGN_IN_URL (/sign-in)                        │
+│   → NEXT_PUBLIC_CLERK_SIGN_UP_URL (/sign-up)                        │
+│   → AWS_REGION, GCP_REGION                                          │
+│   → LLM_MODEL, EMBEDDING_MODEL, EMBEDDING_DIMENSIONS                │
+│   → MAX_CRITIC_REVISIONS, MAX_CODE_REVIEW_ROUNDS                    │
+└─────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
