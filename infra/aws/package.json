@@ -1,0 +1,25 @@
+{
+  "name": "@documind/infra-aws",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "synth": "cdk synth",
+    "deploy": "cdk deploy",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.178.0",
+    "constructs": "^10.4.2",
+    "@aws-sdk/client-s3": "^3.750.0",
+    "@aws-sdk/client-sts": "^3.750.0",
+    "pg": "^8.13.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "aws-cdk": "^2.178.0",
+    "esbuild": "^0.24.0",
+    "@types/node": "^22.13.0",
+    "@types/pg": "^8.11.0"
+  }
+}
