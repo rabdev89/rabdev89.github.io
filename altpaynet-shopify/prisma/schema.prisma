@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Session {
+  id            String    @id
+  shop          String
+  state         String
+  isOnline      Boolean   @default(false)
+  scope         String?
+  expires       DateTime?
+  accessToken   String?
+  userId        BigInt?
+  firstName     String?
+  lastName      String?
+  email         String?
+  accountOwner  Boolean   @default(false)
+  locale        String?
+
+  @@index([shop])
+}
+
+model Shop {
+  id               String   @id @default(cuid())
+  shopDomain       String   @unique
+  altpaynetToken   String?
+  altpaynetSecret  String?
+  companyName      String?
+  companyEmail     String?
+  testMode         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  paymentSessions  PaymentSession[]
+}
+
+model PaymentSession {
+  id                   String   @id @default(cuid())
+  shopifySessionId     String   @unique
+  shopifyGid           String?
+  shopDomain           String
+  amount               Decimal
+  currency             String   @default("PHP")
+  status               String   @default("pending")
+  altpaynetSessionId   String?
+  altpaynetTransactionId String?
+  kind                 String   @default("sale")
+  test                 Boolean  @default(false)
+  cancelUrl            String?
+  errorMessage         String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  shop                 Shop     @relation(fields: [shopDomain], references: [shopDomain])
+
+  refunds              RefundSession[]
+
+  @@index([shopDomain])
+  @@index([altpaynetSessionId])
+}
+
+model RefundSession {
+  id                    String   @id @default(cuid())
+  shopifyRefundId       String   @unique
+  shopifyGid            String?
+  paymentSessionId      String
+  amount                Decimal
+  currency              String   @default("PHP")
+  status                String   @default("pending")
+  altpaynetRefundId     String?
+  errorMessage          String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  paymentSession        PaymentSession @relation(fields: [paymentSessionId], references: [id])
+
+  @@index([paymentSessionId])
+}

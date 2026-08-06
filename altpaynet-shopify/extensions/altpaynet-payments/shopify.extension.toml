@@ -1,0 +1,19 @@
+api_version = "2024-10"
+
+[[extensions]]
+name = "AltPayNet Payments"
+handle = "altpaynet-payments"
+type = "payments_app"
+
+  [extensions.payment_experience]
+  payment_method = "offsite"
+
+  [extensions.targeting]
+  payment_session_url = "/api/payment-session"
+  refund_session_url = "/api/refund-session"
+  capture_session_url = ""
+  void_session_url = ""
+  confirmation_callback_url = "/api/payment-callback"
+
+  [extensions.test_mode_available]
+  test_mode = true

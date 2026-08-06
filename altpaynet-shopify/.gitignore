@@ -1,0 +1,9 @@
+node_modules/
+build/
+dist/
+.env
+.env.local
+.cache/
+.shopify/
+prisma/migrations/**/migration_lock.toml
+*.tsbuildinfo

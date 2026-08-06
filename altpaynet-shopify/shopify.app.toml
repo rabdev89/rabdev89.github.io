@@ -1,0 +1,38 @@
+# Learn more about configuring your app:
+# https://shopify.dev/docs/apps/tools/cli/configuration
+
+name = "AltPayNet Payments"
+client_id = "YOUR_SHOPIFY_APP_CLIENT_ID"
+application_url = "https://your-app-domain.com"
+embedded = true
+
+[access_scopes]
+scopes = "write_payment_gateways,write_payment_sessions"
+
+[auth]
+redirect_urls = [
+  "https://your-app-domain.com/auth/callback",
+  "https://your-app-domain.com/auth/shopify/callback",
+  "https://your-app-domain.com/api/auth/callback"
+]
+
+[webhooks]
+api_version = "2024-10"
+
+[payments]
+  [payments.offsite]
+    payment_session_url = "/api/payment/session"
+    confirmation_callback_url = "/api/payment/confirm"
+    supports_3ds = false
+
+    [payments.offsite.refund]
+      refund_session_url = "/api/payment/refund"
+
+    [payments.offsite.capture]
+      capture_session_url = "/api/payment/capture"
+
+    [payments.offsite.void]
+      void_session_url = "/api/payment/void"
+
+[pos]
+embedded = false
